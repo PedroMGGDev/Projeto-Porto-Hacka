@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Navios</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #000000;
+            color: white;
+        }
+
+        #back-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        #back-button:hover {
+            background-color: #0056b3;
+        }
+
+        #pie-chart {
+            margin-top: 20px;
+            width: 80%;
+            max-width: 300px; /* Ajustado para um tamanho menor */
+        }
+    </style>
+</head>
+<body>
+    <button id="back-button">Voltar</button>
+    <canvas id="pie-chart"></canvas>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script>
+        // Carregar alertas do localStorage
+        const alerts = JSON.parse(localStorage.getItem('dashboardAlerts')) || { onu: 0, santo: 0 };
+
+        const data = {
+            labels: ['Não está na ONU', 'Não está em Santo'],
+            datasets: [{
+                label: 'Alertas de Navios',
+                data: [alerts.onu, alerts.santo],
+                backgroundColor: ['#ff6384', '#36a2eb'],
+                hoverOffset: 4
+            }]
+        };
+
+        const config = {
+            type: 'pie',
+            data: data,
+            options: {
+                plugins: {
+                    datalabels: {
+                        color: '#fff',
+                        anchor: 'center',
+                        align: 'center',
+                        font: {
+                            size: 18 // Aumenta o tamanho da fonte dos números
+                        },
+                        formatter: (value, context) => value
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        };
+
+        const pieChart = new Chart(
+            document.getElementById('pie-chart'),
+            config
+        );
+
+        // Adicionar evento ao botão de voltar
+        document.getElementById('back-button').addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>

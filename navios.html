@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabelas de Navios</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #000000, #434343);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 90%;
+        }
+
+        .tables-container {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+        }
+
+        .table-container {
+            width: 45%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 16px;
+            min-width: 1000px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #333333;
+            color: white;
+        }
+
+        tr {
+            border-bottom: 1px solid #434343;
+        }
+
+        tr:nth-child(even) {
+            background-color: #2a2a2a;
+        }
+
+        tr:hover {
+            background-color: #444444;
+        }
+
+        th, td {
+            border: 1px solid #434343;
+        }
+
+        .buttons-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #333333;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #555555;
+        }
+
+        .export-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #264cd6;
+        }
+    </style>
+</head>
+<body>
+    <button class="export-button" onclick="exportToExcel()">Exportar para Excel</button>
+    <div class="container">
+        <div class="tables-container">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Período</th>
+                            <th>ETA</th>
+                            <th>Local</th>
+                            <th>Nome do Navio</th>
+                            <th>IMO</th>
+                            <th>Mercadoria</th>
+                            <th>Manobra</th>
+                            <th>Viagem</th>
+                            <th>DUV</th>
+                            <th>Liberado</th>
+                            <th>Pendente</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table1-body">
+                        <!-- Dados da Tabela 1 -->
+                        <!-- Adicione os dados aqui -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Período</th>
+                            <th>ETA</th>
+                            <th>Local</th>
+                            <th>Nome do Navio</th>
+                            <th>IMO</th>
+                            <th>Mercadoria</th>
+                            <th>Manobra</th>
+                            <th>Viagem</th>
+                            <th>DUV</th>
+                            <th>Liberado</th>
+                            <th>Pendente</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table2-body">
+                        <!-- Dados da Tabela 2 -->
+                        <!-- Adicione os dados aqui -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="buttons-container">
+            <button onclick="previousPage()">Anterior</button>
+            <button onclick="nextPage()">Próximo</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <script>
+        let data1 = [];
+        let data2 = [];
+        let currentPage = 0;
+        const rowsPerPage = 5;
+
+        async function fetchData() {
+            try {
+                const response = await fetch('/API_DADOS.py');
+                const data = await response.json();
+                data1 = data.table1;
+                data2 = data.table2;
+                renderTable(data1, 'table1-body');
+                renderTable(data2, 'table2-body');
+            } catch (error) {
+                console.error('Erro ao buscar dados da API:', error);
+            }
+        }
+
+        function renderTable(data, tableBodyId) {
+            const tableBody = document.getElementById(tableBodyId);
+            tableBody.innerHTML = '';
+            const start = currentPage * rowsPerPage;
+            const end = start + rowsPerPage;
+            const pageData = data.slice(start, end);
+            pageData.forEach(row => {
+                const tr = document.createElement('tr');
+                Object.values(row).forEach(cell => {
+                    const td = document.createElement('td');
+                    td.textContent = cell;
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function nextPage() {
+            currentPage++;
+            renderTable(data1, 'table1-body');
+            renderTable(data2, 'table2-body');
+        }
+
+        function previousPage() {
+            if (currentPage > 0) {
+                currentPage--;
+                renderTable(data1, 'table1-body');
+                renderTable(data2, 'table2-body');
+            }
+        }
+
+        function exportToExcel() {
+            const workbook = XLSX.utils.book_new();
+            const ws1 = XLSX.utils.json_to_sheet(data1);
+            const ws2 = XLSX.utils.json_to_sheet(data2);
+            XLSX.utils.book_append_sheet(workbook, ws1, "Tabela 1");
+            XLSX.utils.book_append_sheet(workbook, ws2, "Tabela 2");
+            XLSX.writeFile(workbook, "tabelas_de_navios.xlsx");
+        }
+
+        // Fetch data from API and render the first page initially
+        fetchData();
+    </script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alerta de Navios</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #000000;
+            color: white;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        .alert {
+            font-size: 24px;
+            margin: 10px 0;
+            padding: 20px;
+            border: 2px solid #ff0000;
+            border-radius: 10px;
+            background-color: #330000;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.5s ease-in-out;
+        }
+
+        .alert.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        #download-button {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-left: 10px;
+        }
+
+        #dashboard-button {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-left: 10px;
+        }
+
+        #download-button:hover, #dashboard-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="alert-container">
+        <!-- Frases de alerta serão adicionadas aqui -->
+    </div>
+    <button id="download-button">Baixar Relatório Excel</button>
+    <button id="dashboard-button">Ver Dashboard</button>
+
+    <script>
+        let alerts = [];
+        let currentAlertIndex = 0;
+
+        async function fetchAlerts() {
+            try {
+                const response = await fetch('/API_DADOS.py');
+                const data = await response.json();
+                alerts = data.alerts; // Assumindo que a API retorna um objeto com a propriedade 'alerts'
+                showAlert();
+            } catch (error) {
+                console.error('Erro ao buscar dados da API:', error);
+            }
+        }
+
+        function showAlert() {
+            if (currentAlertIndex < alerts.length) {
+                const container = document.getElementById('alert-container');
+                const alert = document.createElement('div');
+                alert.className = 'alert';
+                alert.textContent = alerts[currentAlertIndex];
+                container.appendChild(alert);
+
+                // Adicionar alerta ao localStorage
+                const existingAlerts = JSON.parse(localStorage.getItem('dashboardAlerts')) || { onu: 0, santo: 0 };
+                if (alert.textContent.includes("base de santo")) {
+                    existingAlerts.santo += 1;
+                } else {
+                    existingAlerts.onu += 1;
+                }
+                localStorage.setItem('dashboardAlerts', JSON.stringify(existingAlerts));
+
+                // Trigger the show animation
+                setTimeout(() => {
+                    alert.classList.add('show');
+                }, 100);
+
+                // Remove the alert after some time and show the next one
+                setTimeout(() => {
+                    alert.classList.remove('show');
+                    setTimeout(() => {
+                        container.removeChild(alert);
+                        currentAlertIndex++;
+                        showAlert();
+                    }, 500);
+                }, 3000); // Show each alert for 3 seconds
+            }
+        }
+
+        // Função para baixar o relatório em Excel
+        function downloadExcel() {
+            const data = alerts.map(alert => [alert]);
+            const worksheet = XLSX.utils.aoa_to_sheet(data);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Relatório de Alertas");
+            XLSX.writeFile(workbook, "relatorio_alertas.xlsx");
+        }
+
+        // Adicionar evento ao botão de download
+        document.getElementById('download-button').addEventListener('click', downloadExcel);
+
+        // Adicionar evento ao botão de dashboard
+        document.getElementById('dashboard-button').addEventListener('click', () => {
+            window.location.href = 'dashboard.html';
+        });
+
+        // Fetch alerts from API and start showing them
+        fetchAlerts();
+    </script>
+
+    <!-- Adicionar biblioteca XLSX -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+</body>
+</html>
